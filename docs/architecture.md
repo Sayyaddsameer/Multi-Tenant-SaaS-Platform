@@ -1,601 +1,304 @@
-\# System Architecture Document
+# System Architecture Document
 
-
-
-\*\*Project Name:\*\* Multi-Tenant SaaS Project Management System
-
-\*\*Date:\*\* October 26, 2025
-
-\*\*Version:\*\* 1.0
-
-\*\*Author:\*\* AWS Student / Lead Developer
-
-
+**Project Name:** Multi-Tenant SaaS Project Management System  
+**Date:** October 26, 2025  
+**Version:** 1.0  
+**Author:** AWS Student / Lead Developer
 
 ---
 
+## 1. System Architecture Design
 
+The system follows a **containerized three-tier web architecture** designed for modularity, scalability, and tenant isolation.  
+The entire stack is orchestrated using **Docker Compose**, ensuring environment consistency across development and production.
 
-\## 1. System Architecture Design
+---
 
+## High-Level Architecture Diagram
 
-
-The system follows a containerized 3-tier web architecture designed for modularity and isolation. The entire stack is orchestrated via Docker Compose, ensuring environment consistency between development and production.
-
-
-
-\### High-Level Architecture Diagram
-
-!\[System Architecture Diagram](docs/images/system-architecture.png)
-
-
-
-> \*Note: If the image above does not render, please refer to the Mermaid definition below which describes the flow.\*
-
-
+![System Architecture Diagram](docs/images/system-architecture.png)
 
 ```mermaid
-
 graph LR
+    User[Client Browser] -->|HTTPS / Port 3000| Frontend[Frontend Container<br/>(React + Vite)]
+    Frontend -->|REST API / JSON| Backend[Backend Container<br/>(Node.js + Express)]
+    Backend -->|SQL Query + tenant_id| DB[(Database Container<br/>PostgreSQL)]
 
-&nbsp;   User\[Client Browser] -->|HTTPS / Port 3000| Frontend\[Frontend Container\\n(React + Vite)]
+    subgraph Docker_Network [Docker Network]
+        Frontend
+        Backend
+        DB
+    end
 
-&nbsp;   Frontend -->|REST API / JSON| Backend\[Backend Container\\n(Node.js + Express)]
-
-&nbsp;   Backend -->|SQL Query + tenant\_id| DB\[(Database Container\\nPostgreSQL)]
-
-&nbsp;   
-
-&nbsp;   subgraph Docker Network
-
-&nbsp;       Frontend
-
-&nbsp;       Backend
-
-&nbsp;       DB
-
-&nbsp;   end
-
-&nbsp;   
-
-&nbsp;   subgraph Security Layer
-
-&nbsp;       Backend -- Authenticates --> JWT\[JWT Service]
-
-&nbsp;       Backend -- Enforces --> RBAC\[Role Middleware]
-
-&nbsp;   end
+    subgraph Security_Layer [Security Layer]
+        Backend -- Authenticates --> JWT[JWT Service]
+        Backend -- Enforces --> RBAC[Role Middleware]
+    end
 ```
 
+## System Architecture & Components
 
-
-\## System Architecture \& Components
-
-
-
-The system follows a \*\*multi-tenant, containerized architecture\*\* with clear separation between frontend, backend, and database layers.
-
-
+The system follows a **multi-tenant, containerized architecture** with a clear separation between the **frontend**, **backend**, and **database** layers.
 
 ---
 
+## Components Description
 
+### Client Layer (Frontend)
 
-\## Components Description
-
-
-
-\### Client Layer (Frontend)
-
-
-
-\- \*\*Technology:\*\* React.js (Vite Build Tool)
-
-\- \*\*Container Port:\*\* `3000 (External) → 3000 (Internal)`
-
-\- \*\*Responsibilities:\*\*
-
-&nbsp; - Renders the user interface
-
-&nbsp; - Handles user interactions
-
-&nbsp; - Manages authentication state (JWT storage)
-
-&nbsp; - Communicates with the Backend API
-
-\- \*\*Multi-Tenancy:\*\*
-
-&nbsp; - Tenant context identified via:
-
-&nbsp;   - Subdomain (e.g., `tenant1.app.com`), or
-
-&nbsp;   - Login form input
-
-
+- **Technology:** React.js (Vite Build Tool)
+- **Container Port:** `3000 (External) → 3000 (Internal)`
+- **Responsibilities:**
+  - Renders the user interface
+  - Handles user interactions
+  - Manages authentication state (JWT storage)
+  - Communicates with the Backend API
+- **Multi-Tenancy:**
+  - Tenant context is identified via:
+    - Subdomain (e.g., `tenant1.app.com`), or
+    - Login form input
 
 ---
 
+### Application Layer (Backend API)
 
-
-\### Application Layer (Backend API)
-
-
-
-\- \*\*Technology:\*\* Node.js, Express.js
-
-\- \*\*Container Port:\*\* `5000 (External) → 5000 (Internal)`
-
-\- \*\*Responsibilities:\*\*
-
-&nbsp; - Business logic execution
-
-&nbsp; - Authentication (JWT)
-
-&nbsp; - Authorization (RBAC)
-
-&nbsp; - Tenant isolation enforcement
-
-\- \*\*Isolation Mechanism:\*\*
-
-&nbsp; - Middleware extracts `tenant\_id` from JWT
-
-&nbsp; - Injects `tenant\_id` into database query context
-
-&nbsp; - Ensures strict tenant-level data isolation
-
-
+- **Technology:** Node.js, Express.js
+- **Container Port:** `5000 (External) → 5000 (Internal)`
+- **Responsibilities:**
+  - Business logic execution
+  - Authentication (JWT)
+  - Authorization (RBAC)
+  - Tenant isolation enforcement
+- **Isolation Mechanism:**
+  - Middleware extracts `tenant_id` from the JWT
+  - Injects `tenant_id` into the database query context
+  - Ensures strict tenant-level data isolation
 
 ---
 
+### Data Layer (Database)
 
-
-\### Data Layer (Database)
-
-
-
-\- \*\*Technology:\*\* PostgreSQL 15
-
-\- \*\*Container Port:\*\* `5432 (External) → 5432 (Internal)`
-
-\- \*\*Responsibilities:\*\*
-
-&nbsp; - Persistent relational data storage
-
-\- \*\*Isolation Strategy:\*\*
-
-&nbsp; - \*\*Shared Database, Shared Schema\*\*
-
-&nbsp; - Logical isolation via `tenant\_id` discriminator column
-
-&nbsp; - `tenant\_id` exists in all tenant-owned tables
-
-
+- **Technology:** PostgreSQL 15
+- **Container Port:** `5432 (External) → 5432 (Internal)`
+- **Responsibilities:**
+  - Persistent relational data storage
+- **Isolation Strategy:**
+  - **Shared Database, Shared Schema**
+  - Logical isolation using the `tenant_id` discriminator column
+  - `tenant_id` exists in all tenant-owned tables
 
 ---
 
-
-
-\## High-Level System Architecture (Mermaid)
-
-
+## High-Level System Architecture (Mermaid)
 
 ```mermaid
-
 graph LR
+    Client[Frontend<br/>React.js :3000] -->|HTTPS + JWT| API[Backend API<br/>Node.js :5000]
 
-&nbsp;   Client\[Frontend<br/>React.js :3000] -->|HTTPS + JWT| API\[Backend API<br/>Node.js :5000]
+    API -->|SQL Queries<br/>tenant_id enforced| DB[(PostgreSQL 15<br/>Shared DB)]
 
-
-
-&nbsp;   API -->|SQL Queries<br/>tenant\_id enforced| DB\[(PostgreSQL 15<br/>Shared DB)]
-
-
-
-&nbsp;   subgraph Multi-Tenant Isolation
-
-&nbsp;       API
-
-&nbsp;       DB
-
-&nbsp;   end
-
+    subgraph Multi-Tenant_Isolation [Multi-Tenant Isolation]
+        API
+        DB
+    end
 ```
 
+## Database Schema Design (ERD)
 
+The database schema is normalized to **Third Normal Form (3NF)** to eliminate redundancy and ensure data integrity.
 
-\## Database Schema Design (ERD)
-
-
-
-The database schema is normalized to \*\*Third Normal Form (3NF)\*\* to eliminate redundancy and ensure data integrity.
-
-
-
-The `tenant\_id` column acts as the \*\*logical partition key\*\* for multi-tenancy, enabling secure data isolation within a shared database and shared schema model.
-
-
+The `tenant_id` column acts as the **logical partition key** for multi-tenancy, enabling secure data isolation within a **shared database, shared schema** model.
 
 ```mermaid
-
 erDiagram
+    TENANTS ||--o{ USERS : owns
+    TENANTS ||--o{ PROJECTS : owns
+    TENANTS ||--o{ TASKS : owns
+    TENANTS ||--o{ AUDIT_LOGS : records
 
-&nbsp;   TENANTS ||--o{ USERS : owns
+    USERS ||--o{ PROJECTS : creates
+    PROJECTS ||--o{ TASKS : contains
+    USERS ||--o{ TASKS : assigned_to
 
-&nbsp;   TENANTS ||--o{ PROJECTS : owns
+    TENANTS {
+        uuid id PK
+        string name
+        string subdomain UK
+        string status
+        string subscription_plan
+        int max_users
+        int max_projects
+    }
 
-&nbsp;   TENANTS ||--o{ TASKS : owns
+    USERS {
+        uuid id PK
+        uuid tenant_id FK
+        string email
+        string password_hash
+        string full_name
+        string role
+    }
 
-&nbsp;   TENANTS ||--o{ AUDIT\_LOGS : records
+    PROJECTS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid created_by FK
+        string name
+        string description
+        string status
+    }
 
+    TASKS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid project_id FK
+        uuid assigned_to FK
+        string title
+        string priority
+        string status
+        date due_date
+    }
 
-
-&nbsp;   USERS ||--o{ PROJECTS : creates
-
-&nbsp;   PROJECTS ||--o{ TASKS : contains
-
-&nbsp;   USERS ||--o{ TASKS : assigned\_to
-
-
-
-&nbsp;   TENANTS {
-
-&nbsp;       uuid id PK
-
-&nbsp;       string name
-
-&nbsp;       string subdomain UK
-
-&nbsp;       string status
-
-&nbsp;       string subscription\_plan
-
-&nbsp;       int max\_users
-
-&nbsp;       int max\_projects
-
-&nbsp;   }
-
-
-
-&nbsp;   USERS {
-
-&nbsp;       uuid id PK
-
-&nbsp;       uuid tenant\_id FK
-
-&nbsp;       string email
-
-&nbsp;       string password\_hash
-
-&nbsp;       string full\_name
-
-&nbsp;       string role
-
-&nbsp;   }
-
-
-
-&nbsp;   PROJECTS {
-
-&nbsp;       uuid id PK
-
-&nbsp;       uuid tenant\_id FK
-
-&nbsp;       uuid created\_by FK
-
-&nbsp;       string name
-
-&nbsp;       string description
-
-&nbsp;       string status
-
-&nbsp;   }
-
-
-
-&nbsp;   TASKS {
-
-&nbsp;       uuid id PK
-
-&nbsp;       uuid tenant\_id FK
-
-&nbsp;       uuid project\_id FK
-
-&nbsp;       uuid assigned\_to FK
-
-&nbsp;       string title
-
-&nbsp;       string priority
-
-&nbsp;       string status
-
-&nbsp;       date due\_date
-
-&nbsp;   }
-
-
-
-&nbsp;   AUDIT\_LOGS {
-
-&nbsp;       uuid id PK
-
-&nbsp;       uuid tenant\_id FK
-
-&nbsp;       string action
-
-&nbsp;       string entity\_type
-
-&nbsp;       uuid entity\_id
-
-&nbsp;       string ip\_address
-
-&nbsp;   }
-
+    AUDIT_LOGS {
+        uuid id PK
+        uuid tenant_id FK
+        string action
+        string entity_type
+        uuid entity_id
+        string ip_address
+    }
 ```
 
+## Schema Details
 
-
-\## Schema Details
-
-
-
-\### `tenants` (Root Entity)
-
-\- \*\*Primary Key:\*\* `id (UUID)`
-
-\- \*\*Data:\*\*
-
-&nbsp; - `name`
-
-&nbsp; - `subdomain` (Unique)
-
-&nbsp; - `status`
-
-&nbsp; - `subscription\_plan`
-
-\- \*\*Constraints:\*\*
-
-&nbsp; - `max\_users`
-
-&nbsp; - `max\_projects`
-
-\- \*\*Isolation:\*\*
-
-&nbsp; - Root table (no `tenant\_id` column)
-
-
+### `tenants` (Root Entity)
+- **Primary Key:** `id (UUID)`
+- **Data:**
+  - `name`
+  - `subdomain` (Unique)
+  - `status`
+  - `subscription_plan`
+- **Constraints:**
+  - `max_users`
+  - `max_projects`
+- **Isolation:**
+  - Root table (no `tenant_id` column)
 
 ---
 
-
-
-\### `users`
-
-\- \*\*Primary Key:\*\* `id (UUID)`
-
-\- \*\*Foreign Key:\*\*
-
-&nbsp; - `tenant\_id → tenants.id` (`ON DELETE CASCADE`) \*\*\[ISOLATION KEY]\*\*
-
-\- \*\*Data:\*\*
-
-&nbsp; - `email`
-
-&nbsp; - `password\_hash`
-
-&nbsp; - `full\_name`
-
-&nbsp; - `role`
-
-\- \*\*Constraint:\*\*
-
-&nbsp; - `UNIQUE (tenant\_id, email)`  
-
-&nbsp;   (Emails are unique per tenant)
-
-
+### `users`
+- **Primary Key:** `id (UUID)`
+- **Foreign Key:**
+  - `tenant_id → tenants.id` (`ON DELETE CASCADE`) **[ISOLATION KEY]**
+- **Data:**
+  - `email`
+  - `password_hash`
+  - `full_name`
+  - `role`
+- **Constraint:**
+  - `UNIQUE (tenant_id, email)`  
+    (Emails are unique per tenant)
 
 ---
 
-
-
-\### `projects`
-
-\- \*\*Primary Key:\*\* `id (UUID)`
-
-\- \*\*Foreign Keys:\*\*
-
-&nbsp; - `tenant\_id → tenants.id` (`ON DELETE CASCADE`) \*\*\[ISOLATION KEY]\*\*
-
-&nbsp; - `created\_by → users.id`
-
-\- \*\*Data:\*\*
-
-&nbsp; - `name`
-
-&nbsp; - `description`
-
-&nbsp; - `status`
-
-\- \*\*Index:\*\*
-
+### `projects`
+- **Primary Key:** `id (UUID)`
+- **Foreign Keys:**
+  - `tenant_id → tenants.id` (`ON DELETE CASCADE`) **[ISOLATION KEY]**
+  - `created_by → users.id`
+- **Data:**
+  - `name`
+  - `description`
+  - `status`
+- **Index:**
 ```sql
-
-CREATE INDEX idx\_projects\_tenant ON projects(tenant\_id);
-
+CREATE INDEX idx_projects_tenant ON projects(tenant_id);
 ```
 
-
-
-\### `tasks`
-
-\- \*\*Primary Key:\*\* `id (UUID)`
-
-\- \*\*Foreign Keys:\*\*
-
-&nbsp; - `project\_id → projects.id` (`ON DELETE CASCADE`)
-
-&nbsp; - `tenant\_id → tenants.id` \*\*\[ISOLATION KEY]\*\*
-
-&nbsp; - `assigned\_to → users.id` (Nullable)
-
-\- \*\*Data:\*\*
-
-&nbsp; - `title`
-
-&nbsp; - `priority`
-
-&nbsp; - `status`
-
-&nbsp; - `due\_date`
-
-\- \*\*Index:\*\*
-
+### `tasks`
+- **Primary Key:** `id (UUID)`
+- **Foreign Keys:**
+  - `project_id → projects.id` (`ON DELETE CASCADE`)
+  - `tenant_id → tenants.id` **[ISOLATION KEY]**
+  - `assigned_to → users.id` (Nullable)
+- **Data:**
+  - `title`
+  - `priority`
+  - `status`
+  - `due_date`
+- **Index:**
 ```sql
+CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
+```
 
-CREATE INDEX idx\_tasks\_tenant ON tasks(tenant\_id);
+### `audit_logs`
+- **Primary Key:** `id (UUID)`
+- **Foreign Key:**
+  - `tenant_id → tenants.id` **[ISOLATION KEY]**
+- **Data:**
+  - `action`
+  - `entity_type`
+  - `entity_id`
+  - `ip_address`
 
+---
 
+## API Architecture
 
-\### `audit\_logs`
+The application exposes **19 RESTful endpoints** following standard REST principles.
 
-\- \*\*Primary Key:\*\* `id (UUID)`
-
-\- \*\*Foreign Key:\*\*
-
-&nbsp; - `tenant\_id → tenants.id` \*\*\[ISOLATION KEY]\*\*
-
-\- \*\*Data:\*\*
-
-&nbsp; - `action`
-
-&nbsp; - `entity\_type`
-
-&nbsp; - `entity\_id`
-
-&nbsp; - `ip\_address`
-
-
-
-\## API Architecture
-
-
-
-The application exposes \*\*19 RESTful endpoints\*\* following REST principles.
-
-
-
-\### Standard API Response Format
-
-
+### Standard API Response Format
 
 All API responses follow a consistent structure:
 
-
-
 ```json
-
 {
-
-&nbsp; "success": true,
-
-&nbsp; "message": "Operation completed successfully",
-
-&nbsp; "data": {}
-
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {}
 }
-
 ```
 
-
-
-\### Module A: Authentication
-
-
+### Module A: Authentication
 
 | Method | Endpoint | Description | Authentication Required | Role |
-
 |-------:|----------|-------------|--------------------------|------|
-
 | POST | `/api/auth/register-tenant` | Register new organization and tenant admin | No | Public |
-
 | POST | `/api/auth/login` | Login and receive JWT | No | Public |
-
 | GET | `/api/auth/me` | Get current user context | Yes | Any |
-
 | POST | `/api/auth/logout` | Invalidate user session | Yes | Any |
 
-
-
-\### Module B: Tenant Management
-
-
+### Module B: Tenant Management
 
 | Method | Endpoint | Description | Authentication Required | Role |
-
 |-------:|----------|-------------|--------------------------|------|
+| GET | `/api/tenants` | List all tenants (System Admin) | Yes | `super_admin` |
+| GET | `/api/tenants/:tenantId` | Get specific tenant details | Yes | `super_admin` or `owner` |
+| PUT | `/api/tenants/:tenantId` | Update tenant settings or subscription | Yes | `super_admin` or `tenant_admin` |
 
-| GET | `/api/tenants` | List all tenants (System Admin) | Yes | `super\_admin` |
-
-| GET | `/api/tenants/:tenantId` | Get specific tenant details | Yes | `super\_admin` or `owner` |
-
-| PUT | `/api/tenants/:tenantId` | Update tenant settings or subscription | Yes | `super\_admin` or `tenant\_admin` |
-
-
-
-\### Module C: User Management
-
-
+### Module C: User Management
 
 | Method | Endpoint | Description | Authentication Required | Role |
-
 |-------:|----------|-------------|--------------------------|------|
-
-| POST | `/api/tenants/:tenantId/users` | Create a new user within a tenant | Yes | `tenant\_admin` |
-
+| POST | `/api/tenants/:tenantId/users` | Create a new user within a tenant | Yes | `tenant_admin` |
 | GET | `/api/tenants/:tenantId/users` | List all users in a tenant | Yes | Any tenant member |
+| PUT | `/api/users/:userId` | Update user profile or role | Yes | `tenant_admin` or Self |
+| DELETE | `/api/users/:userId` | Remove user from tenant | Yes | `tenant_admin` |
 
-| PUT | `/api/users/:userId` | Update user profile or role | Yes | `tenant\_admin` or Self |
-
-| DELETE | `/api/users/:userId` | Remove user from tenant | Yes | `tenant\_admin` |
-
-
-
-\### Module D: Project Management
-
-
+### Module D: Project Management
 
 | Method | Endpoint | Description | Authentication Required | Role |
-
 |-------:|----------|-------------|--------------------------|------|
-
 | POST | `/api/projects` | Create a new project | Yes | Any tenant member |
-
 | GET | `/api/projects` | List projects (scoped to tenant) | Yes | Any tenant member |
-
 | PUT | `/api/projects/:projectId` | Update project details | Yes | Creator or Admin |
-
 | DELETE | `/api/projects/:projectId` | Delete a project | Yes | Creator or Admin |
 
-
-
-\### Module E: Task Management
-
-
+### Module E: Task Management
 
 | Method | Endpoint | Description | Authentication Required | Role |
-
 |-------:|----------|-------------|--------------------------|------|
-
 | POST | `/api/projects/:projectId/tasks` | Create a task within a project | Yes | Any tenant member |
-
 | GET | `/api/projects/:projectId/tasks` | List all tasks in a project | Yes | Any tenant member |
-
 | PATCH | `/api/tasks/:taskId/status` | Quickly update task status | Yes | Any tenant member |
-
 | PUT | `/api/tasks/:taskId` | Perform a full task update | Yes | Any tenant member |
-
-
-
-
-
