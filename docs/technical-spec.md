@@ -16,14 +16,14 @@ The project is structured as a **Monorepo** containing both the **Backend API** 
 ### 1.1 Root Directory Structure
 
 ```text
-/saas-platform
-├── docker-compose.yml       # Defines services (database, backend, frontend) & networking
-├── submission.json          # Test credentials for automated evaluation
-├── README.md                # Project documentation and setup guide
-├── .env.example             # Template for environment variables
-├── docs/                    # Documentation artifacts (PRD, Architecture, Research)
-├── backend/                 # Backend Node.js application
-└── frontend/                # Frontend React application
+/Multi-Tenant-SaaS-Platform
+├── docker-compose.yml       # Orchestration for DB, Backend, Frontend
+├── submission.json          # Credentials for automated evaluation
+├── README.md                # Entry point documentation
+├── .gitignore               # Git ignore rules
+├── docs/                    # Architecture, PRD, Research artifacts
+├── backend/                 # Node.js/Express API Container
+└── frontend/                # React Application Container
 ```
 
 ## 1.2 Backend Structure (`/backend`)
@@ -32,39 +32,19 @@ The backend is built using **Node.js**, **Express**, and **Prisma**, following a
 
 ```text
 backend/
-├── src/
-│   ├── config/                     # Configuration files (DB connections, constants)
-│   ├── controllers/                # Request handlers containing business logic
-│   │   ├── authController.js
-│   │   ├── tenantController.js
-│   │   ├── userController.js
-│   │   ├── projectController.js
-│   │   └── taskController.js
-│   ├── middleware/                 # Express middleware
-│   │   ├── authMiddleware.js       # JWT verification & tenant_id extraction
-│   │   ├── errorMiddleware.js      # Global error handling
-│   │   └── validationMiddleware.js # Input validation logic
-│   ├── routes/                     # API route definitions
-│   │   ├── auth.js
-│   │   ├── tenants.js
-│   │   ├── users.js
-│   │   ├── projects.js
-│   │   └── tasks.js
-│   ├── utils/                      # Helper functions (hashing, JWT generation)
-│   └── index.js                    # Application entry point
-│
+├── .env.example             # Template for environment variables
+├── Dockerfile               # Backend container config
+├── package.json             # Backend dependencies
 ├── prisma/
-│   ├── schema.prisma               # Database schema definition
-│   └── migrations/                 # SQL migration history
-│
-├── scripts/
-│   └── entrypoint.sh               # Docker startup script (runs migrations/seeds)
-│
+│   ├── schema.prisma        # Database schema definition
+│   └── migrations/          # SQL migration history
 ├── seeds/
-│   └── seed.js                     # Database seeding logic
-│
-├── Dockerfile                      # Backend container configuration
-└── package.json                    # Project dependencies
+│   └── seed.js              # Database seeding logic
+└── src/
+    ├── controllers/         # Business logic (Auth, Tenant, Project)
+    ├── middleware/          # Auth, Error, & Validation middleware
+    ├── routes/              # API Endpoint definitions
+    └── utils/               # Helper functions (hash.js, jwt.js)
 ```
 
 ## 1.3 Frontend Structure (`/frontend`)
@@ -73,27 +53,14 @@ The frontend is built using **React** with the **Vite** build tool for fast deve
 
 ```text
 frontend/
-├── src/
-│   ├── api/                 # Axios configuration and API service calls
-│   │   └── axios.js
-│   ├── components/          # Reusable UI components
-│   │   ├── Layout.jsx       # Main layout (Navbar, Sidebar)
-│   │   ├── Modal.jsx
-│   │   └── ProtectedRoute.jsx
-│   ├── pages/               # Page-level views mapped to routes
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Projects.jsx
-│   │   └── Users.jsx
-│   ├── App.jsx              # Main app component & route definitions
-│   └── main.jsx             # React DOM entry point
-│
-├── public/                  # Static assets
-├── Dockerfile               # Frontend container configuration
-├── nginx.conf               # Nginx configuration for serving static files
-├── vite.config.js           # Vite build configuration
-└── package.json             # Project dependencies
+├── Dockerfile               # Frontend container config
+├── package.json             # Frontend dependencies
+├── public/                  # Static assets (index.html, icons)
+└── src/
+    ├── context/             # Global State (AuthContext.js)
+    ├── pages/               # View components (Dashboard, Login, Register)
+    ├── App.js               # Main Component & Routing
+    └── index.js             # DOM Entry point
 ```
 
 ## 2️. Development Setup Guide
