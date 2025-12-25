@@ -16,8 +16,6 @@ The entire stack is orchestrated using **Docker Compose**, ensuring environment 
 
 ## High-Level Architecture Diagram
 
-![System Architecture Diagram](docs/images/system-architecture.png)
-
 ```mermaid
 graph LR
     User[Client Browser] -->|HTTPS / Port 3000| Frontend[Frontend Container<br/>(React + Vite)]
