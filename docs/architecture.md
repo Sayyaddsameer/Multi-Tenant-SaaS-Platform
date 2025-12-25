@@ -17,20 +17,31 @@ The entire stack is orchestrated using **Docker Compose**, ensuring environment 
 ## High-Level Architecture Diagram
 ```mermaid
 graph LR
-    User[Client Browser] -->|HTTPS Port 3000| Frontend[Frontend Container (React + Vite)]
-    Frontend -->|REST API JSON| Backend[Backend Container (Node.js + Express)]
-    Backend -->|SQL Query with tenant_id| DB[(PostgreSQL Database)]
+    User --> Frontend
+    Frontend --> Backend
+    Backend --> Database
 
-    subgraph Docker_Network["Docker Network"]
+    subgraph Docker
         Frontend
         Backend
-        DB
+        Database
     end
 
-    subgraph Security_Layer["Security Layer"]
-        Backend --> JWT[JWT Authentication]
-        Backend --> RBAC[RBAC Middleware]
+    subgraph Security
+        JWT
+        RBAC
     end
+
+    Backend --> JWT
+    Backend --> RBAC
+
+    User[Client]
+    Frontend[Frontend React]
+    Backend[Backend API]
+    Database[(PostgreSQL)]
+    JWT[JWT Auth]
+    RBAC[Role Guard]
+
 ```
 
 ## System Architecture & Components
