@@ -1,0 +1,172 @@
+// 1. Database Connection
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Enums (Strictly Typed)
+enum TenantStatus {
+  active
+  suspended
+  trial
+}
+
+enum SubscriptionPlan {
+  free
+  pro
+  enterprise
+}
+
+enum Role {
+  super_admin
+  tenant_admin
+  user
+}
+
+enum ProjectStatus {
+  active
+  archived
+  completed
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  completed
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+// 3. Table Definitions
+
+// TABLE 1: tenants
+model Tenant {
+  id               String           @id @default(uuid())
+  name             String
+  subdomain        String           @unique
+  status           TenantStatus     @default(active)
+  subscriptionPlan SubscriptionPlan @default(free) @map("subscription_plan")
+  maxUsers         Int              @default(5) @map("max_users")
+  maxProjects      Int              @default(3) @map("max_projects")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  // Relationships
+  users     User[]
+  projects  Project[]
+  tasks     Task[]
+  auditLogs AuditLog[]
+
+  @@map("tenants")
+}
+
+// TABLE 2: users
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String?  @map("tenant_id") // Nullable for Super Admin
+  email        String
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         Role     @default(user)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projects      Project[] // Projects created by user
+  assignedTasks Task[]    @relation("AssignedTasks")
+  auditLogs     AuditLog[]
+  sessions      Session[] // Relation to Table 6
+
+  // Constraints
+  @@unique([tenantId, email]) // Email unique PER tenant
+  @@map("users")
+}
+
+// TABLE 3: projects
+model Project {
+  id          String        @id @default(uuid())
+  tenantId    String        @map("tenant_id")
+  name        String
+  description String?       @db.Text
+  status      ProjectStatus @default(active)
+  createdBy   String        @map("created_by")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relationships
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator User   @relation(fields: [createdBy], references: [id])
+  tasks   Task[]
+
+  // Indexes
+  @@index([tenantId])
+  @@map("projects")
+}
+
+// TABLE 4: tasks
+model Task {
+  id          String       @id @default(uuid())
+  projectId   String       @map("project_id")
+  tenantId    String       @map("tenant_id")
+  title       String
+  description String?      @db.Text
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  assignedTo  String?      @map("assigned_to")
+  dueDate     DateTime?    @map("due_date") @db.Date
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignee User?   @relation("AssignedTasks", fields: [assignedTo], references: [id]) // Set NULL on delete handled by DB logic if not strict cascade
+
+  // Indexes
+  @@index([tenantId, projectId])
+  @@map("tasks")
+}
+
+// TABLE 5: audit_logs
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// TABLE 6: sessions (Explicitly Requested)
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([token])
+  @@map("sessions")
+}
