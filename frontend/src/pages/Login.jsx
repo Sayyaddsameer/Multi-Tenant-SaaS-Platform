@@ -32,7 +32,7 @@ const Login = () => {
     <div className="auth-container">
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <input name="tenantSubdomain" placeholder="Organization Subdomain" onChange={handleChange} required />
+        <input name="tenantSubdomain" placeholder="Organization Subdomain" onChange={handleChange} required={false} />
         <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
         <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
         
