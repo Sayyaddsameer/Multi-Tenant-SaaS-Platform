@@ -36,19 +36,119 @@ const Register = () => {
     }
   };
 
+  // Inline style objects
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      padding: '20px'
+    },
+    title: {
+      marginBottom: '24px',
+      color: '#333',
+      fontSize: '2rem',
+      fontWeight: '600'
+    },
+    form: {
+      background: '#ffffff',
+      padding: '40px',
+      borderRadius: '12px',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+      width: '100%',
+      maxWidth: '450px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px'
+    },
+    input: {
+      padding: '12px 16px',
+      border: '1px solid #ddd',
+      borderRadius: '8px',
+      fontSize: '1rem',
+      outline: 'none',
+      backgroundColor: '#fff',
+      width: '100%',
+      boxSizing: 'border-box'
+    },
+    subdomainWrapper: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      width: '100%'
+    },
+    suffix: {
+      color: '#666',
+      fontSize: '0.9rem',
+      fontWeight: '500',
+      whiteSpace: 'nowrap'
+    },
+    button: {
+      backgroundColor: '#4A90E2',
+      color: 'white',
+      padding: '14px',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '1rem',
+      fontWeight: '600',
+      cursor: 'pointer',
+      marginTop: '10px',
+      transition: 'background-color 0.2s'
+    },
+    footerText: {
+      marginTop: '20px',
+      color: '#666',
+      fontSize: '0.9rem'
+    },
+    link: {
+      color: '#4A90E2',
+      textDecoration: 'none',
+      fontWeight: 'bold'
+    }
+  };
+
   return (
-    <div className="auth-container">
-      <h2>Register Organization</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="tenantName" placeholder="Organization Name" onChange={handleChange} required />
+    <div className="auth-container" style={styles.container}>
+      <h2 style={styles.title}>Register Organization</h2>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <input 
+          name="tenantName" 
+          placeholder="Organization Name" 
+          onChange={handleChange} 
+          required 
+          style={styles.input}
+        />
         
-        <div className="subdomain-wrapper">
-            <input name="subdomain" placeholder="Subdomain" onChange={handleChange} required />
-            <span className="suffix">.yourapp.com</span>
+        <div className="subdomain-wrapper" style={styles.subdomainWrapper}>
+            <input 
+              name="subdomain" 
+              placeholder="Subdomain" 
+              onChange={handleChange} 
+              required 
+              style={styles.input}
+            />
+            <span className="suffix" style={styles.suffix}>.yourapp.com</span>
         </div>
 
-        <input name="adminFullName" placeholder="Full Name" onChange={handleChange} required />
-        <input name="adminEmail" type="email" placeholder="Email" onChange={handleChange} required />
+        <input 
+          name="adminFullName" 
+          placeholder="Full Name" 
+          onChange={handleChange} 
+          required 
+          style={styles.input}
+        />
+        <input 
+          name="adminEmail" 
+          type="email" 
+          placeholder="Email" 
+          onChange={handleChange} 
+          required 
+          style={styles.input}
+        />
         
         <div className="password-group">
             <input 
@@ -57,13 +157,23 @@ const Register = () => {
                 placeholder="Password" 
                 onChange={handleChange} 
                 required 
+                style={styles.input}
             />
         </div>
-        <input name="confirmPassword" type="password" placeholder="Confirm Password" onChange={handleChange} required />
+        <input 
+          name="confirmPassword" 
+          type="password" 
+          placeholder="Confirm Password" 
+          onChange={handleChange} 
+          required 
+          style={styles.input}
+        />
 
-        <button type="submit">Register</button>
+        <button type="submit" style={styles.button}>Register</button>
       </form>
-      <p>Already have an account? <Link to="/login">Login</Link></p>
+      <p style={styles.footerText}>
+        Already have an account? <Link to="/login" style={styles.link}>Login</Link>
+      </p>
     </div>
   );
 };
