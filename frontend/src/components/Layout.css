@@ -1,0 +1,54 @@
+/* frontend/src/components/Layout.css */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background: white;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100%;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-links {
+  padding: 1rem;
+  flex: 1;
+}
+
+.nav-item {
+  display: block;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: #EEF2FF; /* Indigo 50 */
+  color: var(--primary);
+}
+
+.user-profile {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.main-content {
+  margin-left: 260px;
+  flex: 1;
+  padding: 2rem;
+}

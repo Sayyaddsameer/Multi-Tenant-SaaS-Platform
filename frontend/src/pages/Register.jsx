@@ -13,7 +13,8 @@ const Register = () => {
     adminEmail: '',
     adminFullName: '',
     adminPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    plan: 'free' // Default selection
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -36,7 +37,6 @@ const Register = () => {
     }
   };
 
-  // Inline style objects
   const styles = {
     container: {
       minHeight: '100vh',
@@ -64,6 +64,12 @@ const Register = () => {
       display: 'flex',
       flexDirection: 'column',
       gap: '16px'
+    },
+    label: {
+      fontSize: '0.9rem',
+      fontWeight: '600',
+      color: '#555',
+      marginBottom: '-8px'
     },
     input: {
       padding: '12px 16px',
@@ -133,6 +139,20 @@ const Register = () => {
             />
             <span className="suffix" style={styles.suffix}>.yourapp.com</span>
         </div>
+
+        {/* Plan Selection Dropdown */}
+        <label style={styles.label}>Subscription Plan</label>
+        <select 
+          name="plan" 
+          value={formData.plan} 
+          onChange={handleChange} 
+          style={styles.input}
+          required
+        >
+          <option value="free">Free (5 users, 3 projects)</option>
+          <option value="pro">Pro (25 users, 15 projects)</option>
+          <option value="enterprise">Enterprise (100 users, 50 projects)</option>
+        </select>
 
         <input 
           name="adminFullName" 

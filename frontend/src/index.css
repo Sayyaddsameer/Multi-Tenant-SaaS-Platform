@@ -1,0 +1,47 @@
+/* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #4F46E5;       /* Indigo 600 */
+  --primary-hover: #4338ca;
+  --bg-main: #F3F4F6;       /* Cool Gray 100 */
+  --bg-card: #FFFFFF;
+  --text-main: #111827;     /* Gray 900 */
+  --text-muted: #6B7280;    /* Gray 500 */
+  --border: #E5E7EB;        /* Gray 200 */
+  --danger: #EF4444;
+  --success: #10B981;
+  --warning: #F59E0B;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Common Card Style */
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+/* Modern Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }

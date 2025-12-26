@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
-import './Projects.css'; // Reuse existing CSS
+import './Projects.css'; // We can reuse the existing CSS
 
 const Tenants = () => {
   const [tenants, setTenants] = useState([]);
@@ -15,7 +15,7 @@ const Tenants = () => {
         setTenants(data.data.tenants);
         setLoading(false);
       } catch (error) {
-        toast.error('Failed to load tenants. Are you Super Admin?');
+        toast.error('Failed to load tenants. Are you logged in as Super Admin?');
         setLoading(false);
       }
     };
@@ -37,7 +37,7 @@ const Tenants = () => {
                     <th>Organization Name</th>
                     <th>Subdomain</th>
                     <th>Plan</th>
-                    <th>Admin Status</th>
+                    <th>Status</th>
                     <th>Registered Date</th>
                 </tr>
             </thead>
@@ -46,6 +46,7 @@ const Tenants = () => {
                     <tr key={tenant.id}>
                         <td style={{fontWeight: 'bold'}}>{tenant.name}</td>
                         <td>
+                            {/* Link to login page with pre-filled subdomain */}
                             <a href={`http://localhost:3000/login?subdomain=${tenant.subdomain}`} target="_blank" rel="noreferrer">
                                 {tenant.subdomain}
                             </a>
