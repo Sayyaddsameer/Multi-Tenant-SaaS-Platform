@@ -6,22 +6,25 @@ const prisma = new PrismaClient();
 // Access: Any Tenant Member
 const createProject = async (req, res, next) => {
   const { name, description, status } = req.body;
-  const { tenantId, userId } = req.user;
+  const { tenantId, userId, role } = req.user; // Added 'role'
 
   try {
     // 1. Check Subscription Limits (Max Projects)
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-    const projectCount = await prisma.project.count({ where: { tenantId } });
+    // SUPER ADMIN LOGIC: Bypass limit check
+    if (role !== 'super_admin') {
+        const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+        const projectCount = await prisma.project.count({ where: { tenantId } });
 
-    if (projectCount >= tenant.maxProjects) {
-      res.status(403);
-      throw new Error('Project limit reached. Upgrade your plan to add more.');
+        if (projectCount >= tenant.maxProjects) {
+            res.status(403);
+            throw new Error('Project limit reached. Upgrade your plan to add more.');
+        }
     }
 
     // 2. Create Project
     const project = await prisma.project.create({
       data: {
-        tenantId,
+        tenantId, // Note: If Super Admin creates, this might be null unless injected manually
         name,
         description,
         status: status || 'active',
@@ -42,13 +45,14 @@ const createProject = async (req, res, next) => {
 };
 
 // API 13: List Projects
-// Access: Any Tenant Member
+// Access: Any Tenant Member (Super Admin sees all)
 const listProjects = async (req, res, next) => {
-  const { tenantId } = req.user;
+  const { tenantId, role } = req.user; // Added 'role'
   const { search, status, page = 1, limit = 10 } = req.query;
 
   try {
-    const where = { tenantId };
+    // SUPER ADMIN LOGIC: If super_admin, remove tenant filter to see ALL projects
+    const where = role === 'super_admin' ? {} : { tenantId };
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
@@ -92,7 +96,7 @@ const listProjects = async (req, res, next) => {
 };
 
 // API 14: Update Project
-// Access: Creator OR Tenant Admin
+// Access: Creator OR Tenant Admin OR Super Admin
 const updateProject = async (req, res, next) => {
   const { projectId } = req.params;
   const { name, description, status } = req.body;
@@ -107,14 +111,17 @@ const updateProject = async (req, res, next) => {
     }
 
     // Authorization: Must be same tenant AND (Creator OR Admin)
-    if (project.tenantId !== tenantId) {
-      res.status(403);
-      throw new Error('Access denied');
-    }
+    // SUPER ADMIN LOGIC: Bypass these checks
+    if (role !== 'super_admin') {
+        if (project.tenantId !== tenantId) {
+            res.status(403);
+            throw new Error('Access denied');
+        }
 
-    if (project.createdBy !== userId && role !== 'tenant_admin') {
-      res.status(403);
-      throw new Error('Only the creator or admin can update this project');
+        if (project.createdBy !== userId && role !== 'tenant_admin') {
+            res.status(403);
+            throw new Error('Only the creator or admin can update this project');
+        }
     }
 
     const updatedProject = await prisma.project.update({
@@ -135,7 +142,7 @@ const updateProject = async (req, res, next) => {
 };
 
 // API 15: Delete Project
-// Access: Creator OR Tenant Admin
+// Access: Creator OR Tenant Admin OR Super Admin
 const deleteProject = async (req, res, next) => {
   const { projectId } = req.params;
   const { tenantId, userId, role } = req.user;
@@ -148,14 +155,18 @@ const deleteProject = async (req, res, next) => {
       throw new Error('Project not found');
     }
 
-    if (project.tenantId !== tenantId) {
-      res.status(403);
-      throw new Error('Access denied');
-    }
+    // Authorization checks
+    // SUPER ADMIN LOGIC: Bypass checks
+    if (role !== 'super_admin') {
+        if (project.tenantId !== tenantId) {
+            res.status(403);
+            throw new Error('Access denied');
+        }
 
-    if (project.createdBy !== userId && role !== 'tenant_admin') {
-      res.status(403);
-      throw new Error('Only the creator or admin can delete this project');
+        if (project.createdBy !== userId && role !== 'tenant_admin') {
+            res.status(403);
+            throw new Error('Only the creator or admin can delete this project');
+        }
     }
 
     await prisma.project.delete({ where: { id: projectId } });
