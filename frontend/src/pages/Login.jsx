@@ -90,14 +90,6 @@ const Login = () => {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="auth-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="tenantSubdomain" placeholder="Organization Subdomain" onChange={handleChange} required={false} />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-=======
     <div className="auth-container" style={styles.container}>
       <h2 style={styles.title}>Login</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
@@ -124,7 +116,6 @@ const Login = () => {
           required 
           style={styles.input}
         />
->>>>>>> 3abe207 (feat(frontend): apply inline styling to login page)
         
         <button type="submit" style={styles.button}>Login</button>
       </form>
