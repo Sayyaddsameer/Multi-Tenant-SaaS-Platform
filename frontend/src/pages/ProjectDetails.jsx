@@ -40,6 +40,7 @@ const ProjectDetails = () => {
         setTasks(taskRes.data.data.tasks);
         setLoading(false);
       } catch (error) {
+        console.error("Fetch error:", error);
         toast.error('Failed to load details');
         setLoading(false);
       }
@@ -53,7 +54,7 @@ const ProjectDetails = () => {
       // Default assign to current user if empty
       const payload = { 
         ...newTask, 
-        assignedTo: newTask.assignedTo || user.userId || user.id 
+        assignedTo: newTask.assignedTo || user?.userId || user?.id 
       };
       
       await api.post(`/projects/${id}/tasks`, payload);
@@ -81,6 +82,14 @@ const ProjectDetails = () => {
   };
 
   if (loading) return <div>Loading...</div>;
+
+  // --- REQUIRED LOGIC ADDED: Null Guard ---
+  // This prevents the "Cannot read properties of null" error if fetch fails
+  // or if the project is not found but navigation hasn't completed yet.
+  if (!project) {
+    return <div className="projects-container">Project details unavailable.</div>;
+  }
+  // ----------------------------------------
 
   return (
     <div className="projects-container">

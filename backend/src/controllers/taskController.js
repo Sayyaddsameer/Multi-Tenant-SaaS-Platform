@@ -7,20 +7,30 @@ const prisma = new PrismaClient();
 const createTask = async (req, res, next) => {
   const { projectId } = req.params;
   const { title, description, assignedTo, priority, dueDate } = req.body;
-  const { tenantId, userId } = req.user;
+  const { tenantId, userId, role } = req.user;
 
   try {
-    // 1. Verify Project belongs to Tenant
+    // 1. Verify Project belongs to Tenant (Super Admins generally shouldn't create tasks in random tenants, but logic could be added)
     const project = await prisma.project.findUnique({ where: { id: projectId } });
-    if (!project || project.tenantId !== tenantId) {
-      res.status(404);
-      throw new Error('Project not found');
+    
+    // Strict check for regular users
+    if (!project) {
+        res.status(404);
+        throw new Error('Project not found');
     }
+
+    if (role !== 'super_admin' && project.tenantId !== tenantId) {
+       res.status(404); // Hide existence
+       throw new Error('Project not found');
+    }
+
+    // Use the project's tenantId for the task, not the user's (important for Super Admin)
+    const targetTenantId = project.tenantId;
 
     // 2. Verify Assigned User (if provided)
     if (assignedTo) {
       const assignee = await prisma.user.findUnique({ where: { id: assignedTo } });
-      if (!assignee || assignee.tenantId !== tenantId) {
+      if (!assignee || assignee.tenantId !== targetTenantId) {
         res.status(400);
         throw new Error('Assigned user does not belong to this organization');
       }
@@ -29,7 +39,7 @@ const createTask = async (req, res, next) => {
     // 3. Create Task
     const task = await prisma.task.create({
       data: {
-        tenantId,
+        tenantId: targetTenantId, // Ensure task belongs to project's tenant
         projectId,
         title,
         description,
@@ -40,7 +50,7 @@ const createTask = async (req, res, next) => {
       }
     });
 
-    await logAudit(tenantId, userId, 'CREATE_TASK', 'task', task.id, req.ip);
+    await logAudit(targetTenantId, userId, 'CREATE_TASK', 'task', task.id, req.ip);
 
     res.status(201).json({
       success: true,
@@ -55,19 +65,34 @@ const createTask = async (req, res, next) => {
 // Route: GET /api/projects/:projectId/tasks
 const listTasks = async (req, res, next) => {
   const { projectId } = req.params;
-  const { tenantId } = req.user;
+  const { tenantId, role } = req.user;
   const { status, assignedTo, priority, search, page = 1, limit = 50 } = req.query;
 
   try {
     // 1. Verify Project
     const project = await prisma.project.findUnique({ where: { id: projectId } });
-    if (!project || project.tenantId !== tenantId) {
+    
+    if (!project) {
       res.status(404);
       throw new Error('Project not found');
     }
 
+    // --- LOGIC UPDATED: Allow Super Admin to bypass tenant check ---
+    if (role !== 'super_admin') {
+        if (project.tenantId !== tenantId) {
+            res.status(404); // Hide existence
+            throw new Error('Project not found');
+        }
+    }
+    // -------------------------------------------------------------
+
     // 2. Build Query
-    const where = { projectId, tenantId };
+    // We filter by projectId. 
+    // We ALSO filter by tenantId unless it's a super admin (extra safety, though projectId check above covers it)
+    const where = { projectId };
+    if (role !== 'super_admin') {
+        where.tenantId = tenantId;
+    }
 
     if (status) where.status = status;
     if (assignedTo) where.assignedTo = assignedTo;
@@ -118,14 +143,20 @@ const listTasks = async (req, res, next) => {
 const updateTaskStatus = async (req, res, next) => {
   const { taskId } = req.params;
   const { status } = req.body;
-  const { tenantId } = req.user;
+  const { tenantId, role } = req.user;
 
   try {
     const task = await prisma.task.findUnique({ where: { id: taskId } });
     
-    if (!task || task.tenantId !== tenantId) {
+    if (!task) {
       res.status(404);
       throw new Error('Task not found');
+    }
+
+    // Allow Super Admin or Owner Tenant
+    if (role !== 'super_admin' && task.tenantId !== tenantId) {
+        res.status(404);
+        throw new Error('Task not found');
     }
 
     const updatedTask = await prisma.task.update({
@@ -145,19 +176,27 @@ const updateTaskStatus = async (req, res, next) => {
 const updateTask = async (req, res, next) => {
   const { taskId } = req.params;
   const { title, description, status, priority, assignedTo, dueDate } = req.body;
-  const { tenantId, userId } = req.user;
+  const { tenantId, userId, role } = req.user;
 
   try {
     const task = await prisma.task.findUnique({ where: { id: taskId } });
-    if (!task || task.tenantId !== tenantId) {
-      res.status(404);
-      throw new Error('Task not found');
+    
+    if (!task) {
+        res.status(404);
+        throw new Error('Task not found');
+    }
+
+    // Allow Super Admin or Owner Tenant
+    if (role !== 'super_admin' && task.tenantId !== tenantId) {
+        res.status(404);
+        throw new Error('Task not found');
     }
 
     // Verify Assignee if changing
     if (assignedTo) {
        const assignee = await prisma.user.findUnique({ where: { id: assignedTo } });
-       if (!assignee || assignee.tenantId !== tenantId) {
+       // Ensure assignee belongs to the TASK'S tenant (not necessarily the logged in user's tenant if Super Admin)
+       if (!assignee || assignee.tenantId !== task.tenantId) {
          res.status(400);
          throw new Error('Assigned user not in tenant');
        }
@@ -176,7 +215,7 @@ const updateTask = async (req, res, next) => {
       include: { assignee: { select: { id: true, fullName: true, email: true } } }
     });
 
-    await logAudit(tenantId, userId, 'UPDATE_TASK', 'task', taskId, req.ip);
+    await logAudit(task.tenantId, userId, 'UPDATE_TASK', 'task', taskId, req.ip);
 
     res.json({
       success: true,
