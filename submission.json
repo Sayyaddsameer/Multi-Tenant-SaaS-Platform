@@ -14,7 +14,7 @@
         "subscriptionPlan": "pro",
         "admin": {
           "email": "admin@demo.com",
-          "password": "Admin@123",
+          "password": "Demo@123",
           "role": "tenant_admin"
         },
         "users": [
