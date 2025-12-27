@@ -48,7 +48,7 @@ function App() {
                 <Route path="/users" element={<Users />} />
 
                 {/* Super Admin Route */}
-                <Route path="/tenants" element={<Tenants />} /> {/* <--- NEW ROUTE */}
+                <Route path="/tenants" element={<Tenants />} /> 
                 
                 {/* Default Redirect */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
