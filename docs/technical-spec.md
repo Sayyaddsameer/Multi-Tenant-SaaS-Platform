@@ -17,11 +17,17 @@ The project is structured as a **Monorepo** containing both the **Backend API** 
 
 ```text
 /Multi-Tenant-SaaS-Platform
-├── docker-compose.yml       # Orchestration for DB, Backend, Frontend
-├── submission.json          # Credentials for automated evaluation
-├── README.md                # Entry point documentation
-├── .gitignore               # Git ignore rules
-├── docs/                    # Architecture, PRD, Research artifacts
+├── docker-compose.yml       # MANDATORY: Orchestration for database, backend, and frontend
+├── submission.json          # MANDATORY: Test credentials for evaluation
+├── README.md                # Project entry point and YouTube demo link
+├── .gitignore               # Root-level ignore rules
+├── docs/                    # MANDATORY Documentation artifacts
+│   ├── images/              # Architecture diagrams and ERD (PNG files)
+│   ├── API.md               # Documentation for all 19 API endpoints
+│   ├── PRD.md               # Product Requirements Document
+│   ├── architecture.md      # System architecture and data isolation strategy
+│   ├── research.md          # Multi-tenancy and tech stack analysis
+│   └── technical-spec.md    # Folder structure and setup guide
 ├── backend/                 # Node.js/Express API Container
 └── frontend/                # React Application Container
 ```
@@ -32,19 +38,22 @@ The backend is built using **Node.js**, **Express**, and **Prisma**, following a
 
 ```text
 backend/
-├── .env.example             # Template for environment variables
-├── Dockerfile               # Backend container config
+├── prisma/                  # Prisma ORM folder
+│   ├── schema.prisma        # Database schema with tenant_id isolation
+│   └── migrations/          # Automatic SQL migration history
+├── seeds/                   # Seeding logic
+│   └── seed.js              # Automatic DB initialization logic
+├── src/
+│   ├── controllers/         # API logic (tenantController.js, projectController.js)
+│   ├── middleware/          # authMiddleware.js (Role check & Tenant isolation)
+│   ├── routes/              # Express route definitions
+│   ├── services/            # auditService.js (Logging logic)
+│   ├── utils/               # Helpers (JWT generation, password hashing)
+│   └── index.js             # Main server entry point
+├── .env.example             # Template for required ENV variables
+├── Dockerfile               # Backend containerization config
 ├── package.json             # Backend dependencies
-├── prisma/
-│   ├── schema.prisma        # Database schema definition
-│   └── migrations/          # SQL migration history
-├── seeds/
-│   └── seed.js              # Database seeding logic
-└── src/
-    ├── controllers/         # Business logic (Auth, Tenant, Project)
-    ├── middleware/          # Auth, Error, & Validation middleware
-    ├── routes/              # API Endpoint definitions
-    └── utils/               # Helper functions (hash.js, jwt.js)
+└── package-lock.json
 ```
 
 ## 1.3 Frontend Structure (`/frontend`)
@@ -53,14 +62,20 @@ The frontend is built using **React** with the **Vite** build tool for fast deve
 
 ```text
 frontend/
-├── Dockerfile               # Frontend container config
-├── package.json             # Frontend dependencies
-├── public/                  # Static assets (index.html, icons)
+├── public/                  # Static assets
 └── src/
-    ├── context/             # Global State (AuthContext.js)
-    ├── pages/               # View components (Dashboard, Login, Register)
-    ├── App.js               # Main Component & Routing
-    └── index.js             # DOM Entry point
+    ├── components/          # Reusable UI (Navbar, Modals)
+    ├── context/             # AuthContext.js for global user/tenant state
+    ├── pages/               # Page components (Dashboard, Register, Tenants)
+    ├── utils/               # api.js (Axios instance with JWT interceptors)
+    ├── App.js               # React Router and protected route logic
+    ├── index.js             # React DOM entry point
+    ├── App.css              # Global styling
+    └── index.css            # Base styles
+├── Dockerfile               # Frontend containerization config
+├── package.json             # Frontend dependencies
+├── .gitignore               # Frontend-specific ignore rules
+└── README.md                # Frontend specific notes
 ```
 
 ## 2️. Development Setup Guide
