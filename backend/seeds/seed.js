@@ -4,46 +4,30 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(' Starting Database Seeding...');
+  console.log('[INFO] Starting Database Seeding...');
 
   // 1. Create Super Admin (Tenant ID is NULL)
-  // Check if exists to avoid duplicates
   const superAdminEmail = 'superadmin@system.com';
   const superAdminHash = await bcrypt.hash('Admin@123', 10);
   
-  const superAdmin = await prisma.user.upsert({
-    where: { 
-        // We can't use compound unique key here easily because tenantId is null
-        // We'll rely on a manual check or findFirst for this specific case
-        tenantId_email: { tenantId: "", email: "placeholder" } // This won't match, we rely on create below
-    }, 
-    // Hack: For seeding, it's easier to delete and recreate or check manually.
-    // Let's use clean findFirst for SuperAdmin
-    update: {},
-    create: {
-      email: superAdminEmail,
-      passwordHash: superAdminHash,
-      fullName: 'System Super Admin',
-      role: 'super_admin',
-      tenantId: null // Crucial: Super Admin has no tenant
-    }
-  }).catch(async (e) => {
-    // If upsert fails due to unique constraint logic on nulls, try findFirst
-    const exists = await prisma.user.findFirst({ where: { email: superAdminEmail }});
-    if (!exists) {
-        return prisma.user.create({
-            data: {
-              email: superAdminEmail,
-              passwordHash: superAdminHash,
-              fullName: 'System Super Admin',
-              role: 'super_admin',
-              tenantId: null
-            }
-        });
-    }
+  let superAdmin = await prisma.user.findFirst({
+    where: { email: superAdminEmail, tenantId: null }
   });
 
-  console.log(' Super Admin Created');
+  if (!superAdmin) {
+    superAdmin = await prisma.user.create({
+      data: {
+        email: superAdminEmail,
+        passwordHash: superAdminHash,
+        fullName: 'System Super Admin',
+        role: 'super_admin',
+        tenantId: null // Super admin must have null tenantId
+      }
+    });
+    console.log('[SUCCESS] Super Admin Created');
+  } else {
+    console.log('[SKIP] Super Admin already exists');
+  }
 
   // 2. Create Demo Tenant
   const demoTenant = await prisma.tenant.upsert({
@@ -58,11 +42,10 @@ async function main() {
       maxProjects: 15
     }
   });
-
-  console.log(` Tenant Created: ${demoTenant.name}`);
+  console.log(`[SUCCESS] Tenant Created: ${demoTenant.name}`);
 
   // 3. Create Tenant Admin
-  const adminHash = await bcrypt.hash('Demo@123', 10);
+  const adminHash = await bcrypt.hash('Demo@123', 10); // Matches required submission credentials
   const tenantAdmin = await prisma.user.upsert({
     where: {
       tenantId_email: {
@@ -82,8 +65,11 @@ async function main() {
 
   // 4. Create Regular Users
   const userHash = await bcrypt.hash('User@123', 10);
-  const user1 = await prisma.user.create({
-    data: {
+  
+  const user1 = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: demoTenant.id, email: 'user1@demo.com' } },
+    update: {},
+    create: {
       tenantId: demoTenant.id,
       email: 'user1@demo.com',
       passwordHash: userHash,
@@ -92,8 +78,10 @@ async function main() {
     }
   });
 
-  const user2 = await prisma.user.create({
-    data: {
+  const user2 = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: demoTenant.id, email: 'user2@demo.com' } },
+    update: {},
+    create: {
       tenantId: demoTenant.id,
       email: 'user2@demo.com',
       passwordHash: userHash,
@@ -101,69 +89,58 @@ async function main() {
       role: 'user'
     }
   });
-
-  console.log(' Users Created');
+  console.log('[SUCCESS] Users Created');
 
   // 5. Create Sample Projects
-  const project1 = await prisma.project.create({
-    data: {
-      tenantId: demoTenant.id,
-      name: 'Website Redesign',
-      description: 'Q4 Website Overhaul',
-      status: 'active',
-      createdBy: tenantAdmin.id
-    }
+  let project1 = await prisma.project.findFirst({
+    where: { name: 'Website Redesign', tenantId: demoTenant.id }
   });
 
-  const project2 = await prisma.project.create({
-    data: {
-      tenantId: demoTenant.id,
-      name: 'Mobile App Launch',
-      description: 'iOS and Android release',
-      status: 'active',
-      createdBy: tenantAdmin.id
-    }
-  });
-
-  console.log(' Projects Created');
+  if (!project1) {
+    project1 = await prisma.project.create({
+      data: {
+        tenantId: demoTenant.id,
+        name: 'Website Redesign',
+        description: 'Overhaul of the corporate website',
+        status: 'active',
+        createdBy: tenantAdmin.id
+      }
+    });
+  }
+  console.log('[SUCCESS] Projects Created');
 
   // 6. Create Tasks
-  await prisma.task.createMany({
-    data: [
-      {
-        tenantId: demoTenant.id,
-        projectId: project1.id,
-        title: 'Design Mockups',
-        status: 'completed',
-        priority: 'high',
-        assignedTo: user1.id
-      },
-      {
-        tenantId: demoTenant.id,
-        projectId: project1.id,
-        title: 'Frontend Implementation',
-        status: 'in_progress',
-        priority: 'high',
-        assignedTo: user2.id
-      },
-      {
-        tenantId: demoTenant.id,
-        projectId: project2.id,
-        title: 'App Store Submission',
-        status: 'todo',
-        priority: 'medium',
-        assignedTo: tenantAdmin.id
-      }
-    ]
-  });
+  const taskCount = await prisma.task.count({ where: { projectId: project1.id } });
+  if (taskCount === 0) {
+    await prisma.task.createMany({
+      data: [
+        {
+          tenantId: demoTenant.id,
+          projectId: project1.id,
+          title: 'Design Mockups',
+          status: 'completed',
+          priority: 'high',
+          assignedTo: user1.id
+        },
+        {
+          tenantId: demoTenant.id,
+          projectId: project1.id,
+          title: 'Frontend Implementation',
+          status: 'in_progress',
+          priority: 'high',
+          assignedTo: user2.id
+        }
+      ]
+    });
+    console.log('[SUCCESS] Tasks Created');
+  }
 
-  console.log(' Tasks Created');
-  console.log(' Seeding Completed Successfully.');
+  console.log('[DONE] Seeding Completed Successfully.');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('[ERROR] Seeding Failed:', e);
     process.exit(1);
   })
   .finally(async () => {
