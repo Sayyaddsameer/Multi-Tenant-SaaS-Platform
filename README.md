@@ -139,5 +139,5 @@ The application requires the following variables. See `.env.example` in the back
 
 **Tenant Admin (Demo Company):**
 * Email: `admin@demo.com`
-* Password: `Admin@123`
+* Password: `Demo@123`
 * Subdomain: `demo`
