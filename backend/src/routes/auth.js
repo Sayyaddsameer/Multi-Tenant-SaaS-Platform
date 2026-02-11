@@ -28,4 +28,33 @@ router.post('/login', [
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
 
+// --- TEMPORARY DEBUG ROUTE ---
+router.get('/debug-users', async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    // Fetch all users but ONLY show email and the start of the password hash
+    const users = await prisma.user.findMany({
+      select: { 
+        email: true, 
+        role: true, 
+        passwordHash: true, 
+        tenantId: true 
+      }
+    });
+
+    res.json({
+      count: users.length,
+      users: users.map(u => ({
+        ...u,
+        passwordHash: u.passwordHash ? u.passwordHash.substring(0, 10) + '...' : 'MISSING'
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// -----------------------------
+
 module.exports = router;
