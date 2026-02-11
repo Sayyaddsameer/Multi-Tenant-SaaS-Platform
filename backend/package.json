@@ -5,7 +5,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "migrate": "npx prisma migrate dev",
+    "migrate:dev": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "seed": "node seeds/seed.js"
+  },
+  "prisma": {
     "seed": "node seeds/seed.js"
   },
   "dependencies": {
