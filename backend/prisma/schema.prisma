@@ -139,22 +139,21 @@ model Task {
 
 // TABLE 5: audit_logs
 model AuditLog {
-  id         String   @id @default(uuid())
-  tenantId   String   @map("tenant_id")
-  userId     String?  @map("user_id")
-  action     String
-  entityType String   @map("entity_type")
-  entityId   String   @map("entity_id")
-  ipAddress  String?  @map("ip_address")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  action      String   // e.g., "CREATE_PROJECT", "LOGIN"
+  entity      String   // e.g., "Project", "User"
+  entityId    String?  // The ID of the affected record
+  userId      String?  // Who performed the action
+  user        User?    @relation(fields: [userId], references: [id])
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  details     String?  // JSON string or description of change
+  ipAddress   String?  // <--- Often the missing field
+  userAgent   String?  // <--- Often the missing field
+  createdAt   DateTime @default(now())
 
-  // Relationships
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User?  @relation(fields: [userId], references: [id])
-
-  @@map("audit_logs")
+  @@index([tenantId])
 }
-
 // TABLE 6: sessions (Explicitly Requested)
 model Session {
   id        String   @id @default(uuid())
