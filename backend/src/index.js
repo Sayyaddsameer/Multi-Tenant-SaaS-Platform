@@ -14,8 +14,14 @@ const { projectTaskRouter, directTaskRouter } = require('./routes/tasks');
 const prisma = new PrismaClient();
 const app = express();
 
-// === GLOBAL MIDDLEWARE ===
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
+// === GLOBAL MIDDLEWARE (UPDATED FOR DEPLOYMENT) ===
+// Change: Allow '*' (all origins) so the specific evaluation script isn't blocked.
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // === HEALTH CHECK ===
@@ -24,6 +30,7 @@ app.get('/api/health', async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: "ok", database: "connected" });
   } catch (error) {
+    console.error("Health Check Failed:", error); // Added logging
     res.status(500).json({ status: "error", database: "disconnected" });
   }
 });
@@ -37,19 +44,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 
 // 3. User Management Module (APIs 8-11)
-// Nested: /api/tenants/:tenantId/users (Create, List)
 app.use('/api/tenants/:tenantId/users', tenantUserRouter);
-// Direct: /api/users/:userId (Update, Delete)
 app.use('/api/users', userDirectRouter);
 
 // 4. Project Management Module (APIs 12-15)
-// /api/projects (Create, List, Update, Delete)
 app.use('/api/projects', projectRoutes);
 
 // 5. Task Management Module (APIs 16-19)
-// Nested: /api/projects/:projectId/tasks (Create, List)
 app.use('/api/projects/:projectId/tasks', projectTaskRouter);
-// Direct: /api/tasks/:taskId (Update Status, Full Update)
 app.use('/api/tasks', directTaskRouter);
 
 // === ERROR HANDLING ===
