@@ -1,5 +1,7 @@
 # Multi-Tenant SaaS Platform
 
+### [Live Demo Link](https://multi-tenant-saas-platform-frontend.onrender.com)
+
 ## Description
 A comprehensive B2B SaaS application built to demonstrate **Multi-Tenancy**, **Data Isolation**, and **Role-Based Access Control (RBAC)**. This platform allows organizations (Tenants) to sign up, manage their own isolated workspace, add team members, and track projects and tasks.
 
@@ -107,12 +109,18 @@ This method automatically sets up the Database, Backend, and Frontend.
 
 The application requires the following variables. See `.env.example` in the backend folder.
 
+### Backend (`.env`)
 | Variable | Description | Default (Docker) |
 | :--- | :--- | :--- |
 | `PORT` | Backend Server Port | `5000` |
 | `DATABASE_URL` | PostgreSQL Connection String | `postgresql://...@database:5432/saas_db` |
 | `JWT_SECRET` | Secret key for signing tokens | (Set your own secure key) |
 | `FRONTEND_URL` | URL for CORS configuration | `http://localhost:3000` |
+
+### Frontend (Render Environment)
+| Variable | Description | Value |
+| :--- | :--- | :--- |
+| `REACT_APP_API_URL` | API Endpoint | `https://multi-tenant-backend-fgtd.onrender.com/api` |
 
 ## API Documentation
 
@@ -131,13 +139,12 @@ The application requires the following variables. See `.env.example` in the back
 * `GET /api/tenants/:id/users` - (Tenant Admin) List employees
 * `POST /api/tenants/:id/users` - (Tenant Admin) Add employee
 
-## Testing Credentials (Seed Data)
+## Seeded Users
 
-**Super Admin:**
-* Email: `superadmin@system.com`
-* Password: `Admin@123`
+| Role            | Email                 | Password    | Subdomain | Description |
+|-----------------|----------------------|------------|-----------|-------------|
+| Super Admin     | superadmin@system.com | Admin@123  | N/A       | System owner with access to all tenants and global settings. |
+| Tenant Admin    | admin@demo.com        | Demo@123   | demo      | Administrator for the "Demo Company" organization. |
+| Standard User 1 | user1@demo.com        | User@123   | demo      | Employee in Demo Company (seeded by default). |
+| Standard User 2 | user2@demo.com        | User@123   | demo      | Employee in Demo Company (seeded by default). |
 
-**Tenant Admin (Demo Company):**
-* Email: `admin@demo.com`
-* Password: `Demo@123`
-* Subdomain: `demo`
