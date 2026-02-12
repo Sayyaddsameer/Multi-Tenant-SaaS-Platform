@@ -1,6 +1,6 @@
 {
   "submissionUrl": "https://github.com/Sayyaddsameer/Multi-Tenant-SaaS-Platform",
-  "liveDemo": "https://multi-tenant-backend-fgtd.onrender.com",
+  "liveDemo": "https://multi-tenant-saas-platform-frontend.onrender.com",
   "backendUrl": "https://multi-tenant-backend-fgtd.onrender.com",
   "testCredentials": {
     "superAdmin": {
